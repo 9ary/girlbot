@@ -37,7 +37,7 @@ class Group:
 
 
 GROUPS = {group.id: group for group in (
-    Group(1384391544, 'Programming & Tech for girls'),
+    Group(1384391544, 'Proggy & Techy for girls'),
 )}
 
 
@@ -66,13 +66,13 @@ async def wait_and_revert(chat_id, title, timeout):
 
 
 @client.on(events.NewMessage(
-    pattern=re.compile(r"(?i)programming (?:&|and) (.+)"),
+    pattern=re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)"),
     chats=list(GROUPS.keys())))
 async def on_name(event):
     new_topic = fix_title(event.pattern_match.group(1))
-    new_title = f"Programming & {new_topic}"
+    new_title = f"Proggy & {new_topic}"
     if "tech" not in new_title.lower():
-        new_title += " & Tech"
+        new_title += " & Techy"
     if "girl" not in new_title.lower():
         new_title += " for girls"
 
