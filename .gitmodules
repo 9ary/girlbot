@@ -1,0 +1,3 @@
+[submodule "uniborg"]
+	path = uniborg
+	url = git@git.togrand.xyz:uniborg/uniborg.git
