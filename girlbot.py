@@ -10,6 +10,10 @@ from uniborg import Uniborg
 
 logging.basicConfig(level=logging.INFO)
 
-borg = Uniborg("girlbot", connection_retries=None)
+borg = Uniborg(
+    "girlbot",
+    admins=[51863899],
+    connection_retries=None
+)
 
 borg.run_until_disconnected()
