@@ -1,1 +1,1 @@
-../uniborg/stdplugins/sed.py
+../uniborg/botplugins/sed.py
