@@ -25,7 +25,7 @@ class Group:
 
 
 GROUPS = {group.id: group for group in (
-    Group(1384391544, 'Proggy & Techy for girls'),
+    Group(1166076548, 'Proggy & Techy for girls'),
 )}
 
 
