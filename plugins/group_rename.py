@@ -26,6 +26,7 @@ class Group:
 
 GROUPS = {group.id: group for group in (
     Group(1166076548, 'Proggy & Techy for girls'),
+    Group(1040270887, 'Programming & Tech'),
 )}
 
 
@@ -58,11 +59,16 @@ async def wait_and_revert(chat_id, title, timeout):
     chats=list(GROUPS.keys())))
 async def on_name(event):
     new_topic = fix_title(event.pattern_match.group(1))
-    new_title = f"Proggy & {new_topic}"
-    if "tech" not in new_title.lower():
-        new_title += " & Techy"
-    if "girl" not in new_title.lower():
-        new_title += " for girls"
+    if event.chat_id == -1001166076548:
+        new_title = f"Proggy & {new_topic}"
+        if "tech" not in new_title.lower():
+            new_title += " & Techy"
+        if "girl" not in new_title.lower():
+            new_title += " for girls"
+    else:
+        new_title = f"Programming & {new_topic}"
+        if "tech" not in new_title.lower():
+            new_title += " & Tech"
 
     group = GROUPS[utils.get_peer_id(event.chat_id, False)]  # Thanks Lonami
 
