@@ -20,7 +20,7 @@ REVERT_TIMEOUT = 2 * 60 * 60
 class Group:
     id: int
     title: str
-    rename_lock = asyncio.Lock()
+    rename_lock: asyncio.Lock = None
     revert_task: asyncio.Task = None
 
 
@@ -72,6 +72,9 @@ async def on_name(event):
     if len(new_title) > 255:
         logger.info('Not changing group title because new title is too long')
         return
+
+    if group.rename_lock is None:
+        group.rename_lock = asyncio.Lock()
 
     if group.rename_lock.locked():
         logger.info('Not changing group title because the rename lock is already held')
