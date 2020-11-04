@@ -108,3 +108,13 @@ async def on_name(event):
 
         logger.info(f'Holding rename lock for {MULTI_EDIT_TIMEOUT} seconds')
         await asyncio.sleep(MULTI_EDIT_TIMEOUT)
+
+
+async def unload():
+    for _, group in GROUPS.items():
+        if group.revert_task and not group.revert_task.done():
+            group.revert_task.cancel()
+
+
+for _, group in GROUPS.items():
+    asyncio.create_task(edit_title(group.id, group.title))
