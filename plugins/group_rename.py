@@ -5,11 +5,13 @@
 import asyncio
 import re
 import html
+from typing import Callable
 from dataclasses import dataclass
 
 from telethon import TelegramClient, events, utils
 from telethon.tl.functions.channels import EditTitleRequest
 from telethon.errors.rpcerrorlist import ChatNotModifiedError
+from telethon.errors.rpcerrorlist import ChatAdminRequiredError
 
 
 MULTI_EDIT_TIMEOUT = 80
@@ -20,13 +22,45 @@ REVERT_TIMEOUT = 2 * 60 * 60
 class Group:
     id: int
     title: str
+    regex: re.Pattern
+    fixup: Callable[[str], str] = None
     rename_lock: asyncio.Lock = None
     revert_task: asyncio.Task = None
 
 
+progtech_regex = re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)")
+
+
+def ptg_fixup(new_title):
+    new_title = f"Proggy & {fix_title(new_title)}"
+    if "tech" not in new_title.lower():
+        new_title += " & Techy"
+    if "girl" not in new_title.lower():
+        new_title += " for girls"
+    return new_title
+
+
+def progtech_fixup(new_title):
+    new_title = f"Programming & {fix_title(new_title)}"
+    if "tech" not in new_title.lower():
+        new_title += " & Tech"
+    return new_title
+
+
+def koc_fixup(new_title):
+    new_title = f"kingdom of {new_title}"
+    if "cute" not in new_title.lower():
+        new_title += " and cute"
+    return new_title
+
+
 GROUPS = {group.id: group for group in (
-    Group(1166076548, 'Proggy & Techy for girls'),
-    Group(1040270887, 'Programming & Tech'),
+    Group(1166076548, 'Proggy & Techy for girls',
+        regex=progtech_regex, fixup=ptg_fixup),
+    Group(1040270887, 'Programming & Tech',
+        regex=progtech_regex, fixup=progtech_fixup),
+    Group(1065200679, 'kingdom of cute',
+        regex=re.compile(r"(?i)kingdom of (.+)"), fixup=koc_fixup),
 )}
 
 
@@ -54,23 +88,12 @@ async def wait_and_revert(chat_id, title, timeout):
     await edit_title(chat_id, title)
 
 
-@borg.on(events.NewMessage(
-    pattern=re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)"),
-    chats=list(GROUPS.keys())))
 async def on_name(event):
-    new_topic = fix_title(event.pattern_match.group(1))
-    if event.chat_id == -1001166076548:
-        new_title = f"Proggy & {new_topic}"
-        if "tech" not in new_title.lower():
-            new_title += " & Techy"
-        if "girl" not in new_title.lower():
-            new_title += " for girls"
-    else:
-        new_title = f"Programming & {new_topic}"
-        if "tech" not in new_title.lower():
-            new_title += " & Tech"
-
     group = GROUPS[utils.get_peer_id(event.chat_id, False)]  # Thanks Lonami
+
+    new_title = event.pattern_match.group(1)
+    if callable(group.fixup):
+        new_title = group.fixup(new_title)
 
     logger.info(f'{event.from_id} in {group.id} '
         f'requested a title change to {new_title}')
@@ -97,7 +120,12 @@ async def on_name(event):
             ' changed the group title!',
             parse_mode='html'
         )
-        await edit_title(event.chat_id, new_title)
+        try:
+            await edit_title(event.chat_id, new_title)
+        except ChatAdminRequiredError:
+            logger.warn("Can't change group title due to missing permission")
+            await event.respond('Need admin rights to change group info!')
+            return
 
         logger.info('Creating revert task')
         group.revert_task = asyncio.create_task(wait_and_revert(
@@ -117,4 +145,6 @@ async def unload():
 
 
 for _, group in GROUPS.items():
+    borg.add_event_handler(on_name,
+        events.NewMessage(pattern=group.regex, chats=[group.id]))
     asyncio.create_task(edit_title(group.id, group.title))
