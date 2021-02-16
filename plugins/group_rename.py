@@ -109,7 +109,7 @@ async def on_name(event):
         logger.info('Not changing group title because the rename lock is already held')
         return
 
-    with (await group.rename_lock):
+    async with group.rename_lock:
         if group.revert_task and not group.revert_task.done():
             logger.info('Cancelling previous revert task')
             group.revert_task.cancel()
