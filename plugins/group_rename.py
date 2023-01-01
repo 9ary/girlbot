@@ -103,7 +103,7 @@ async def on_name(event):
     logger.info(f'{event.from_id} in {group.id} '
         f'requested a title change to {new_title}')
 
-    if len(new_title) > 255:
+    if len(new_title) > 128:
         logger.info('Not changing group title because new title is too long')
         return
 
