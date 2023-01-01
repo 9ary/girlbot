@@ -60,14 +60,37 @@ def koc_fixup(new_title):
 
 
 GROUPS = {group.id: group for group in (
-    Group(1166076548, 'Proggy & Techy for girls', separator=" & ",
-        patterns=progtech_patterns, fixup=ptg_fixup),
-    Group(1040270887, 'Programming & Tech', separator=" & ",
-        patterns=progtech_patterns, fixup=progtech_fixup),
-    Group(1743238092, 'Programming & Tech debug', separator=" & ",
-        patterns=progtech_patterns, fixup=progtech_fixup),
-    Group(1065200679, 'kingdom of cute', separator=" and ",
-        patterns=[re.compile(r"(?i)kingdom of (.+)")], fixup=koc_fixup),
+    Group(
+        1166076548,
+        'Proggy & Techy for girls',
+        separator=" & ",
+        patterns=progtech_patterns,
+        fixup=ptg_fixup,
+    ),
+    Group(
+        1040270887,
+        'Programming & Tech',
+        separator=" & ",
+        patterns=progtech_patterns,
+        fixup=progtech_fixup,
+    ),
+    Group(
+        1743238092,
+        'Programming & Tech debug',
+        separator=" & ",
+        patterns=progtech_patterns,
+        fixup=progtech_fixup,
+    ),
+    Group(
+        1065200679,
+        'kingdom of cute',
+        separator=" and ",
+        patterns=[
+            re.compile(r"(?i)kingdom of (.+)"),
+            re.compile(r"(?i)(.+) (?:is|are) cu+te+[.!]*$"),
+        ],
+        fixup=koc_fixup,
+    ),
 )}
 
 
