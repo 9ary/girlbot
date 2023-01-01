@@ -6,7 +6,7 @@ import asyncio
 import re
 import html
 from typing import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from telethon import TelegramClient, events, utils
 from telethon.tl.functions.channels import EditTitleRequest
@@ -22,8 +22,10 @@ REVERT_TIMEOUT = 2 * 60 * 60
 class Group:
     id: int
     title: str
+    separator: str
     patterns: list[re.Pattern]
     fixup: Callable[[str], str] = None
+    additions: list[str] = field(default_factory=list)
     rename_lock: asyncio.Lock = None
     revert_task: asyncio.Task = None
 
@@ -58,13 +60,13 @@ def koc_fixup(new_title):
 
 
 GROUPS = {group.id: group for group in (
-    Group(1166076548, 'Proggy & Techy for girls',
+    Group(1166076548, 'Proggy & Techy for girls', separator=" & ",
         patterns=progtech_patterns, fixup=ptg_fixup),
-    Group(1040270887, 'Programming & Tech',
+    Group(1040270887, 'Programming & Tech', separator=" & ",
         patterns=progtech_patterns, fixup=progtech_fixup),
-    Group(1743238092, 'Programming & Tech debug',
+    Group(1743238092, 'Programming & Tech debug', separator=" & ",
         patterns=progtech_patterns, fixup=progtech_fixup),
-    Group(1065200679, 'kingdom of cute',
+    Group(1065200679, 'kingdom of cute', separator=" and ",
         patterns=[re.compile(r"(?i)kingdom of (.+)")], fixup=koc_fixup),
 )}
 
@@ -88,15 +90,20 @@ async def edit_title(chat, title):
         pass  # Everything is ok
 
 
-async def wait_and_revert(chat_id, title, timeout):
-    await asyncio.sleep(timeout)
-    await edit_title(chat_id, title)
+async def wait_and_revert(group):
+    await asyncio.sleep(REVERT_TIMEOUT)
+    async with group.rename_lock:
+        await edit_title(group.id, group.title)
+        group.additions = []
 
 
 async def on_name(event):
     group = GROUPS[utils.get_peer_id(event.chat_id, False)]  # Thanks Lonami
 
-    new_title = event.pattern_match.group(1)
+    new_addition = event.pattern_match.group(1)
+    additions = group.additions.copy()
+    additions.append(new_addition)
+    new_title = group.separator.join(additions)
     if callable(group.fixup):
         new_title = group.fixup(new_title)
 
@@ -133,11 +140,8 @@ async def on_name(event):
             return
 
         logger.info('Creating revert task')
-        group.revert_task = asyncio.create_task(wait_and_revert(
-            event.chat_id,
-            group.title,
-            REVERT_TIMEOUT
-        ))
+        group.revert_task = asyncio.create_task(wait_and_revert(group))
+        group.additions = additions
 
         logger.info(f'Holding rename lock for {MULTI_EDIT_TIMEOUT} seconds')
         await asyncio.sleep(MULTI_EDIT_TIMEOUT)
