@@ -32,7 +32,7 @@ class Group:
 
 progtech_patterns = [
     re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)"),
-    re.compile(r"(?i)(.+) (?:is|are) te+chy?[.!]*$"),
+    re.compile(r"(?i)(.+) (?:is|are|and|&) te+chy?[.!]*$"),
 ]
 
 
@@ -87,7 +87,7 @@ GROUPS = {group.id: group for group in (
         separator=" and ",
         patterns=[
             re.compile(r"(?i)kingdom of (.+)"),
-            re.compile(r"(?i)(.+) (?:is|are) cu+te+[.!]*$"),
+            re.compile(r"(?i)(.+) (?:is|are|and|&) cu+te+[.!]*$"),
         ],
         fixup=koc_fixup,
     ),
