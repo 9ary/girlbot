@@ -22,13 +22,16 @@ REVERT_TIMEOUT = 2 * 60 * 60
 class Group:
     id: int
     title: str
-    regex: re.Pattern
+    patterns: list[re.Pattern]
     fixup: Callable[[str], str] = None
     rename_lock: asyncio.Lock = None
     revert_task: asyncio.Task = None
 
 
-progtech_regex = re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)")
+progtech_patterns = [
+    re.compile(r"(?i)prog(?:ramming|gy) (?:&|and) (.+)"),
+    re.compile(r"(?i)(.+) (?:is|are) te+chy?[.!]*$"),
+]
 
 
 def ptg_fixup(new_title):
@@ -56,11 +59,13 @@ def koc_fixup(new_title):
 
 GROUPS = {group.id: group for group in (
     Group(1166076548, 'Proggy & Techy for girls',
-        regex=progtech_regex, fixup=ptg_fixup),
+        patterns=progtech_patterns, fixup=ptg_fixup),
     Group(1040270887, 'Programming & Tech',
-        regex=progtech_regex, fixup=progtech_fixup),
+        patterns=progtech_patterns, fixup=progtech_fixup),
+    Group(1743238092, 'Programming & Tech debug',
+        patterns=progtech_patterns, fixup=progtech_fixup),
     Group(1065200679, 'kingdom of cute',
-        regex=re.compile(r"(?i)kingdom of (.+)"), fixup=koc_fixup),
+        patterns=[re.compile(r"(?i)kingdom of (.+)")], fixup=koc_fixup),
 )}
 
 
@@ -145,6 +150,7 @@ async def unload():
 
 
 for _, group in GROUPS.items():
-    borg.add_event_handler(on_name,
-        events.NewMessage(pattern=group.regex, chats=[group.id]))
+    for p in group.patterns:
+        borg.add_event_handler(on_name,
+            events.NewMessage(pattern=p, chats=[group.id]))
     asyncio.create_task(edit_title(group.id, group.title))
