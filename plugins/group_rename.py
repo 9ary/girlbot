@@ -127,11 +127,11 @@ async def _(event):
     if group is not None:
         for p in group.patterns:
             if pattern_match := p.match(event.raw_text):
-                await on_name(group, pattern_match, event)
+                asyncio.create_task(rename_task(group, pattern_match, event))
                 return
 
 
-async def on_name(group, pattern_match, event):
+async def rename_task(group, pattern_match, event):
     new_addition = pattern_match.group(1)
     additions = group.additions.copy()
     additions.append(new_addition)
