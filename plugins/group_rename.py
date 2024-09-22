@@ -120,10 +120,19 @@ async def wait_and_revert(group):
         group.additions = []
 
 
-async def on_name(event):
-    group = GROUPS[utils.get_peer_id(event.chat_id, False)]  # Thanks Lonami
+@borg.on(events.NewMessage)
+async def _(event):
+    event_gid = utils.get_peer_id(event.chat_id, False)  # Thanks Lonami
+    group = GROUPS.get(event_gid)
+    if group is not None:
+        for p in group.patterns:
+            if pattern_match := p.match(event.raw_text):
+                await on_name(group, pattern_match, event)
+                return
 
-    new_addition = event.pattern_match.group(1)
+
+async def on_name(group, pattern_match, event):
+    new_addition = pattern_match.group(1)
     additions = group.additions.copy()
     additions.append(new_addition)
     new_title = group.separator.join(additions)
@@ -177,7 +186,4 @@ async def unload():
 
 
 for _, group in GROUPS.items():
-    for p in group.patterns:
-        borg.add_event_handler(on_name,
-            events.NewMessage(pattern=p, chats=[group.id]))
     asyncio.create_task(edit_title(group.id, group.title))
